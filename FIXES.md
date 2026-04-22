@@ -43,3 +43,7 @@
 **Problem:** The pollJob function is an infinite loop, nothing stops it
 **Fix:** Added maximum number of retries, returns error once it elapses, set timeout to include pollJob(id, retries + 1)
 
+## Fix 8
+**File:** api/main.py
+**Problem:** File is missing /health endpoint needed by healthcheck
+**Fix:** Added /health coes to the file

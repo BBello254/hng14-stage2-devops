@@ -6,5 +6,5 @@ COPY . .
 RUN adduser --disabled-password --gecos "" appuser
 USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
- CMD pgrep -f "python main.py" || exit 1
-CMD ["python", "main.py"]
+ CMD pgrep -f "python worker.py" || exit 1
+CMD ["python", "worker.py"]

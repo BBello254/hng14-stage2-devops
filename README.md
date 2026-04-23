@@ -65,3 +65,4 @@ See `.env.example` for all required variables.
 | REDIS_HOST | Redis service hostname | redis |
 | REDIS_PORT | Redis service port | 6379 |
 | API_URL | API service URL for frontend | http://api:8000 |
+

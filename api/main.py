@@ -30,4 +30,3 @@ def get_job(job_id: str):
 @app.get("/health")
 def health():
     return {"message": "healthy"}
-

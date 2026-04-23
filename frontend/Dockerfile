@@ -6,7 +6,7 @@ RUN npm install
 
 # Stage 2 - final
 FROM node:18-slim
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*  # hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*  
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY . .

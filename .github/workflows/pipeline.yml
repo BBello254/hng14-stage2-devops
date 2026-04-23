@@ -34,20 +34,23 @@ jobs:
       - name: Lint JavaScript files
         run: eslint frontend/app.js --env node --parser-options=ecmaVersion:2020
 
-      - name: Lint Dockerfiles
+      - name: Lint API Dockerfiles
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: api/Dockerfile
+          config: .hadolint.yaml
 
       - name: Lint worker Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: worker/Dockerfile
+          config: .hadolint.yaml
 
       - name: Lint frontend Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: frontend/Dockerfile
+          config: .hadolint.yaml
 
   test:
     runs-on: ubuntu-latest

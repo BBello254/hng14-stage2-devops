@@ -1,6 +1,7 @@
 services:
   api:
     build: ./api
+    restart: unless-stopped
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -19,6 +20,7 @@ services:
 
   worker:
     build: ./worker
+    restart: unless-stopped
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
@@ -35,6 +37,7 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
     environment:
       - API_URL=http://api:8000
     networks:
@@ -52,6 +55,7 @@ services:
 
   redis:
     image: redis:7-alpine
+    restart: unless-stopped
     networks:
       - appnetwork
     deploy:

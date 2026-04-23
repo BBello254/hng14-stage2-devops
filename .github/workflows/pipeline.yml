@@ -10,7 +10,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -34,7 +35,7 @@ jobs:
       - name: Lint JavaScript files
         run: eslint frontend/app.js --env node --parser-options=ecmaVersion:2020
 
-      - name: Lint API Dockerfiles
+      - name: Lint API Dockerfile
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: api/Dockerfile
@@ -56,7 +57,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: lint
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -79,26 +81,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: test
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Start local registry
         run: docker run -d -p 5000:5000 --name registry registry:2
 
       - name: Build and push API image
         run: |
-          docker build -t localhost:5000/api:${{ github.sha }} -t localhost:5000/api:latest ./api
+          docker build --cache-from localhost:5000/api:latest \
+            -t localhost:5000/api:${{ github.sha }} \
+            -t localhost:5000/api:latest ./api
           docker push localhost:5000/api:${{ github.sha }}
           docker push localhost:5000/api:latest
 
       - name: Build and push worker image
         run: |
-          docker build -t localhost:5000/worker:${{ github.sha }} -t localhost:5000/worker:latest ./worker
+          docker build --cache-from localhost:5000/worker:latest \
+            -t localhost:5000/worker:${{ github.sha }} \
+            -t localhost:5000/worker:latest ./worker
           docker push localhost:5000/worker:${{ github.sha }}
           docker push localhost:5000/worker:latest
 
       - name: Build and push frontend image
         run: |
-          docker build -t localhost:5000/frontend:${{ github.sha }} -t localhost:5000/frontend:latest ./frontend
+          docker build --cache-from localhost:5000/frontend:latest \
+            -t localhost:5000/frontend:${{ github.sha }} \
+            -t localhost:5000/frontend:latest ./frontend
           docker push localhost:5000/frontend:${{ github.sha }}
           docker push localhost:5000/frontend:latest
 
@@ -106,7 +118,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Start local registry
         run: docker run -d -p 5000:5000 --name registry registry:2
@@ -157,7 +170,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: security-scan
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install Docker Compose
         run: |
@@ -170,21 +184,10 @@ jobs:
       - name: Wait for services
         run: sleep 30
 
-      - name: Submit job and verify completion
+      - name: Run integration test
         run: |
-          JOB_ID=$(curl -s -X POST http://localhost:8000/jobs | python3 -c "import sys,json; print(json.load(sys.stdin)['job_id'])")
-          echo "Job ID: $JOB_ID"
-          for i in $(seq 1 15); do
-            STATUS=$(curl -s http://localhost:8000/jobs/$JOB_ID | python3 -c "import sys,json; print(json.load(sys.stdin)['status'])")
-            echo "Status: $STATUS"
-            if [ "$STATUS" = "completed" ]; then
-              echo "Job completed successfully!"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Job did not complete in time"
-          exit 1
+          chmod +x integration_test.sh
+          ./integration_test.sh
 
       - name: Tear down stack
         if: always()
@@ -195,13 +198,8 @@ jobs:
     needs: integration-test
     if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Debug secrets
-        run: |
-          echo "IP length: ${#SERVER_IP}"
-        env:
-          SERVER_IP: ${{ secrets.SERVER_IP }}
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Deploy to server
         env:
@@ -213,6 +211,9 @@ jobs:
           ssh -o StrictHostKeyChecking=no -i /tmp/deploy_key root@$SERVER_IP "
             cd hng14-stage2-devops &&
             git pull origin main &&
-            docker-compose up --build -d
+            docker-compose pull &&
+            docker-compose up -d --no-deps &&
+            sleep 10 &&
+            docker-compose ps | grep -q 'Up' && echo 'Deploy successful' || exit 1
           "
           rm /tmp/deploy_key

@@ -197,6 +197,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug secrets
+        run: |
+          echo "IP length: ${#SERVER_IP}"
+        env:
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+
       - name: Deploy to server
         env:
           SERVER_IP: ${{ secrets.SERVER_IP }}
